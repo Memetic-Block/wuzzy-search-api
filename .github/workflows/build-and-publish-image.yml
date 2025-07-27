@@ -55,8 +55,8 @@ jobs:
         run: |
           if grep -q "stage" deploy-vars.json; then
             sed -i "s/\[\[ .commit_sha \]\]/${GITHUB_SHA}/g" operations/wuzzy-search-api-stage.hcl
-            ./nomad job run operations/wuzzy-search-api-stage.hcl
+            nomad job run operations/wuzzy-search-api-stage.hcl
           else
             sed -i "s/\[\[ .commit_sha \]\]/${GITHUB_SHA}/g" operations/wuzzy-search-api-live.hcl
-            ./nomad job run operations/wuzzy-search-api-live.hcl
+            nomad job run operations/wuzzy-search-api-live.hcl
           fi
