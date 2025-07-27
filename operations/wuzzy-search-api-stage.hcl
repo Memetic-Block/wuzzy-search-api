@@ -55,7 +55,7 @@ job "wuzzy-search-api-stage" {
 
       service {
         name = "wuzzy-search-api-stage"
-        port = "kibana"
+        port = "http"
 
         check {
           type     = "http"
