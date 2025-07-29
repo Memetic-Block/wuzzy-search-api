@@ -127,7 +127,7 @@ export class AppService implements OnApplicationBootstrap {
             query
           }
         },
-        size: 20
+        size: 100
       })
 
       console.log(
