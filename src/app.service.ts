@@ -141,12 +141,13 @@ export class AppService implements OnApplicationBootstrap {
         hits: result.hits.hits
           .map(hit => {
             if (hit._source) {
-              hit._source.body = hit._source.body.length > this.BODY_MAX_LENGTH
-              ? hit._source.body.substring(
-                  0,
-                  this.BODY_MAX_LENGTH
-                ) + '...'
-              : hit._source.body
+              hit._source.body = hit._source.body &&
+                hit._source.body.length > this.BODY_MAX_LENGTH
+                  ? hit._source.body.substring(
+                      0,
+                      this.BODY_MAX_LENGTH
+                    ) + '...'
+                  : hit._source.body
             }            
             return hit._source
           })
