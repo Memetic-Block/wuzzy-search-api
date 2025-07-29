@@ -33,6 +33,7 @@ job "wuzzy-search-api-stage" {
         ES_PASSWORD="changeme"
         # ES_CERT_PATH="../infra/certs/ca/ca.crt"
         # ES_USE_TLS="true"
+        CORS_DOMAINS="https://wuzzy-stage.hel.memeticblock.net"
       }
 
       template {

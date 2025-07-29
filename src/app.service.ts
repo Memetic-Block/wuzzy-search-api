@@ -31,7 +31,7 @@ export class AppService implements OnApplicationBootstrap {
   private readonly elasticSearchClient: Client
   private readonly searchIndexName: string
 
-  private readonly BODY_MAX_LENGTH = 1000
+  private readonly BODY_MAX_LENGTH = 250
 
   constructor(
     private readonly config: ConfigService<{
@@ -126,7 +126,8 @@ export class AppService implements OnApplicationBootstrap {
             fields: [ 'title', 'meta_description', 'headings', 'body' ],
             query
           }
-        }
+        },
+        size: 20
       })
 
       console.log(
@@ -140,10 +141,12 @@ export class AppService implements OnApplicationBootstrap {
         hits: result.hits.hits
           .map(hit => {
             if (hit._source) {
-              hit._source.body = hit._source.body.substring(
-                0,
-                this.BODY_MAX_LENGTH
-              )
+              hit._source.body = hit._source.body.length > this.BODY_MAX_LENGTH
+              ? hit._source.body.substring(
+                  0,
+                  this.BODY_MAX_LENGTH
+                ) + '...'
+              : hit._source.body
             }            
             return hit._source
           })
