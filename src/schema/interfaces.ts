@@ -1,8 +1,8 @@
-export interface IndexedDocument {
+export interface IndexedDocumentHit {
   id: string
   last_crawled_at: string
   title: string
-  body: string
+  body?: string
   meta_description: string
   links: string[]
   headings: string[]
@@ -18,5 +18,5 @@ export interface IndexedDocument {
 export interface SearchResults {
   took: number
   total_results: number
-  hits: IndexedDocument[]
+  hits: IndexedDocumentHit[]
 }

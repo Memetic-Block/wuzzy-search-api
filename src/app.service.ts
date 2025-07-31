@@ -2,16 +2,16 @@ import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Client } from '@elastic/elasticsearch'
 import * as fs from 'fs'
+import { stripHtml } from 'string-strip-html'
 
-import { IndexedDocument, SearchResults } from './schema/interfaces'
+import { IndexedDocumentHit, SearchResults } from './schema/interfaces'
 
 @Injectable()
 export class AppService implements OnApplicationBootstrap {
   private readonly logger = new Logger(AppService.name)
   private readonly elasticSearchClient: Client
   private readonly searchIndexName: string
-
-  private readonly BODY_MAX_LENGTH = 250
+  private readonly HIGHLIGHT_HTML_TAG = 'strong'
 
   constructor(
     private readonly config: ConfigService<{
@@ -100,12 +100,12 @@ export class AppService implements OnApplicationBootstrap {
     query: string,
     from: number = 0
   ): Promise<SearchResults> {
-    const size = 100
+    const size = 20
     this.logger.log(
       `Executing search for query [${query}] ` +
         `at offset [${from}] with size [${size}]`
     )
-    const result = await this.elasticSearchClient.search<IndexedDocument>({
+    const result = await this.elasticSearchClient.search<IndexedDocumentHit>({
       index: this.searchIndexName,
       query: {
         combined_fields: {
@@ -114,14 +114,25 @@ export class AppService implements OnApplicationBootstrap {
         }
       },
       from,
-      size
+      size,
+      highlight: {
+        fields: {
+          body: {
+            fragment_size: 150,
+            number_of_fragments: 3,
+            pre_tags: [ `<${this.HIGHLIGHT_HTML_TAG}>` ],
+            post_tags: [ `</${this.HIGHLIGHT_HTML_TAG}>` ]
+          }
+        }
+      }
     })
     const total_results = typeof result.hits.total === 'number'
       ? result.hits.total
       : result.hits.total?.value || 0
     this.logger.log(
       `Search for query "${query}" took [${result.took}ms] ` +
-        `with hits [${result.hits.hits.length}] & total results [${total_results}]`
+        `with hits [${result.hits.hits.length}] ` +
+        `& total results [${total_results}]`
     )
 
     return {
@@ -130,14 +141,15 @@ export class AppService implements OnApplicationBootstrap {
       hits: result.hits.hits
         .map(hit => {
           if (hit._source) {
-            hit._source.body = hit._source.body &&
-              hit._source.body.length > this.BODY_MAX_LENGTH
-                ? hit._source.body.substring(
-                    0,
-                    this.BODY_MAX_LENGTH
-                  ) + '...'
-                : hit._source.body
-          }            
+            if (hit.highlight && hit.highlight.body) {
+              hit._source.body = stripHtml(
+                hit.highlight.body.join('  '),
+                {
+                  ignoreTagsWithTheirContents: [ `${this.HIGHLIGHT_HTML_TAG}` ]
+                }
+              ).result
+            }
+          }
           return hit._source
         })
         .filter(hit => !!hit)
