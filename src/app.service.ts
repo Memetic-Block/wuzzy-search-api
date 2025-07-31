@@ -120,8 +120,8 @@ export class AppService implements OnApplicationBootstrap {
           body: {
             fragment_size: 150,
             number_of_fragments: 3,
-            pre_tags: [ `<${this.HIGHLIGHT_HTML_TAG}>` ],
-            post_tags: [ `</${this.HIGHLIGHT_HTML_TAG}>` ]
+            pre_tags: [ `[[h]]` ],
+            post_tags: [ `[[/h]]` ]
           }
         }
       }
@@ -142,12 +142,15 @@ export class AppService implements OnApplicationBootstrap {
         .map(hit => {
           if (hit._source) {
             if (hit.highlight && hit.highlight.body) {
-              hit._source.body = stripHtml(
-                hit.highlight.body.join('  '),
-                {
-                  ignoreTagsWithTheirContents: [ `${this.HIGHLIGHT_HTML_TAG}` ]
-                }
-              ).result
+              hit._source.body = stripHtml(hit.highlight.body.join('  '))
+                .result
+                .replaceAll(
+                  `[[h]]`,
+                  `<${this.HIGHLIGHT_HTML_TAG}>`
+                ).replaceAll(
+                  `[[/h]]`,
+                  `</${this.HIGHLIGHT_HTML_TAG}>`
+                )
             }
           }
           return hit._source
