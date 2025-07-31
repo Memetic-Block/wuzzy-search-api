@@ -121,7 +121,7 @@ export class AppService implements OnApplicationBootstrap {
       : result.hits.total?.value || 0
     this.logger.log(
       `Search for query "${query}" took [${result.took}ms] ` +
-        `with total hits [${total_results}]`
+        `with hits [${result.hits.hits.length}] & total results [${total_results}]`
     )
 
     return {
