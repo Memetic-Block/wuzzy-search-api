@@ -1,5 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common'
-import { AppService, SearchResults } from './app.service'
+import { AppService } from './app.service'
+import { SearchResults } from './schema/interfaces'
 
 @Controller()
 export class AppController {
@@ -11,7 +12,10 @@ export class AppController {
   }
 
   @Get('search')
-  async search(@Query('q') query: string): Promise<SearchResults> {
-    return this.appService.getSearch(query)
+  async search(
+    @Query('q') query: string,
+    @Query('from') from: number
+  ): Promise<SearchResults> {
+    return this.appService.getSearch(query, from)
   }
 }

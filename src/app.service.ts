@@ -1,33 +1,13 @@
-import { Injectable, OnApplicationBootstrap } from '@nestjs/common'
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { Client, ConnectionOptions } from '@elastic/elasticsearch'
+import { Client } from '@elastic/elasticsearch'
 import * as fs from 'fs'
 
-export interface IndexedDocument {
-  id: string
-  last_crawled_at: string
-  title: string
-  body: string
-  meta_description: string
-  links: string[]
-  headings: string[]
-  url: string
-  url_scheme: string
-  url_host: string
-  url_port: number
-  url_path: string
-  url_path_dir1: string
-  url_path_dir2: string
-}
-
-export interface SearchResults {
-  took: number
-  total_results: number
-  hits: IndexedDocument[]
-}
+import { IndexedDocument, SearchResults } from './schema/interfaces'
 
 @Injectable()
 export class AppService implements OnApplicationBootstrap {
+  private readonly logger = new Logger(AppService.name)
   private readonly elasticSearchClient: Client
   private readonly searchIndexName: string
 
@@ -71,7 +51,7 @@ export class AppService implements OnApplicationBootstrap {
       if (!esCertPath) {
         throw new Error('ES_CERT_PATH is not defined in the configuration')
       }
-      console.log(`Reading Elasticsearch CA certificate from [${esCertPath}]`)
+      this.logger.log(`Reading Elasticsearch CA certificate from [${esCertPath}]`)
       const ca = fs.readFileSync(esCertPath)
       tls = {
         ca,
@@ -81,11 +61,11 @@ export class AppService implements OnApplicationBootstrap {
       }
     }
 
-    console.log(
+    this.logger.log(
       `Initializing Elasticsearch client with url [${esHost}] ` +
         `and username [${esUsername}]`
     )
-    console.log(`Using search index [${this.searchIndexName}]`)
+    this.logger.log(`Using search index [${this.searchIndexName}]`)
     this.elasticSearchClient = new Client({
       node: esHost,
       auth: {
@@ -97,70 +77,70 @@ export class AppService implements OnApplicationBootstrap {
   }
 
   async onApplicationBootstrap() {
-    console.log('Application bootstrap started...')
+    this.logger.log('Application bootstrap started...')
     try {
-      console.log('Checking Elasticsearch connection...')
+      this.logger.log('Checking Elasticsearch connection...')
       const isElasticSearchReachable = await this.elasticSearchClient.ping()
       if (!isElasticSearchReachable) {
         throw new Error('Elasticsearch is not reachable!')
       }
-      console.log('Elasticsearch is reachable.')
+      this.logger.log('Elasticsearch is reachable.')
     } catch (error) {
-      console.error('Error during application bootstrap:', error)
+      this.logger.error('Error during application bootstrap:', error)
       throw error
     }
-    console.log('Application bootstrap completed successfully.')
+    this.logger.log('Application bootstrap completed successfully.')
   }
 
   getHealth(): string {
     return 'OK'
   }
 
-  async getSearch(query: string): Promise<SearchResults> {
-    console.log(`Executing search for query: ${query}`)
-    try {
-      const result = await this.elasticSearchClient.search<IndexedDocument>({
-        index: this.searchIndexName,
-        query: {
-          combined_fields: {
-            fields: [ 'title', 'meta_description', 'headings', 'body' ],
-            query
-          }
-        },
-        size: 100
-      })
+  async getSearch(
+    query: string,
+    from: number = 0
+  ): Promise<SearchResults> {
+    const size = 100
+    this.logger.log(
+      `Executing search for query [${query}] ` +
+        `at offset [${from}] with size [${size}]`
+    )
+    const result = await this.elasticSearchClient.search<IndexedDocument>({
+      index: this.searchIndexName,
+      query: {
+        combined_fields: {
+          fields: [ 'title', 'meta_description', 'headings', 'body' ],
+          query
+        }
+      },
+      from,
+      size
+    })
+    const total_results = typeof result.hits.total === 'number'
+      ? result.hits.total
+      : result.hits.total?.value || 0
+    this.logger.log(
+      `Search for query "${query}" took [${result.took}ms] ` +
+        `with total hits [${total_results}]`
+    )
 
-      console.log(
-        `Search for query "${query}" took [${result.took}ms] ` +
-          `with total hits [${result.hits.hits.length}]`
-      )
-
-      return {
-        took: result.took,
-        total_results: result.hits.hits.length,
-        hits: result.hits.hits
-          .map(hit => {
-            if (hit._source) {
-              hit._source.body = hit._source.body &&
-                hit._source.body.length > this.BODY_MAX_LENGTH
-                  ? hit._source.body.substring(
-                      0,
-                      this.BODY_MAX_LENGTH
-                    ) + '...'
-                  : hit._source.body
-            }            
-            return hit._source
-          })
-          .filter(hit => !!hit)
-      }
-    } catch (error) {
-      console.error('Error executing search:', error)
-
-      return {
-        took: 0,
-        total_results: 0,
-        hits: []
-      }
+    return {
+      took: result.took,
+      total_results,
+      hits: result.hits.hits
+        .map(hit => {
+          if (hit._source) {
+            hit._source.body = hit._source.body &&
+              hit._source.body.length > this.BODY_MAX_LENGTH
+                ? hit._source.body.substring(
+                    0,
+                    this.BODY_MAX_LENGTH
+                  ) + '...'
+                : hit._source.body
+          }            
+          return hit._source
+        })
+        .filter(hit => !!hit)
     }
   }
 }
