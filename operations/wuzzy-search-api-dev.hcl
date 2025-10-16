@@ -1,4 +1,4 @@
-job "wuzzy-search-api-stage" {
+job "wuzzy-search-api-dev" {
   datacenters = [ "mb-hel" ]
   type = "service"
 
@@ -8,7 +8,7 @@ job "wuzzy-search-api-stage" {
     value     = "262144"
   }
 
-  group "wuzzy-search-api-stage-group" {
+  group "wuzzy-search-api-dev-group" {
     count = 1
 
     network {
@@ -18,7 +18,7 @@ job "wuzzy-search-api-stage" {
       }
     }
 
-    task "wuzzy-search-api-stage-task" {
+    task "wuzzy-search-api-dev-task" {
       driver = "docker"
 
       config {
@@ -55,7 +55,7 @@ job "wuzzy-search-api-stage" {
       }
 
       service {
-        name = "wuzzy-search-api-stage"
+        name = "wuzzy-search-api-dev"
         port = "http"
 
         check {
@@ -67,15 +67,15 @@ job "wuzzy-search-api-stage" {
 
         tags = [
           "traefik.enable=true",
-          "traefik.http.middlewares.wuzzy-search-api-stage-corsheaders.headers.accesscontrolallowmethods=GET,OPTIONS,PUT,POST,DELETE,HEAD,PATCH",
-          "traefik.http.middlewares.wuzzy-search-api-stage-corsheaders.headers.accesscontrolallowheaders=*",
-          "traefik.http.middlewares.wuzzy-search-api-stage-corsheaders.headers.accesscontrolalloworiginlist=*",
-          "traefik.http.middlewares.wuzzy-search-api-stage-corsheaders.headers.accesscontrolmaxage=100",
-          "traefik.http.middlewares.wuzzy-search-api-stage-corsheaders.headers.addvaryheader=true",
-          "traefik.http.routers.wuzzy-search-api-stage.entrypoints=https",
-          "traefik.http.routers.wuzzy-search-api-stage.tls=true",
-          "traefik.http.routers.wuzzy-search-api-stage.tls.certresolver=memetic-block",
-          "traefik.http.routers.wuzzy-search-api-stage.rule=Host(`wuzzy-search-api-stage.hel.memeticblock.net`)"
+          "traefik.http.middlewares.wuzzy-search-api-dev-corsheaders.headers.accesscontrolallowmethods=GET,OPTIONS,PUT,POST,DELETE,HEAD,PATCH",
+          "traefik.http.middlewares.wuzzy-search-api-dev-corsheaders.headers.accesscontrolallowheaders=*",
+          "traefik.http.middlewares.wuzzy-search-api-dev-corsheaders.headers.accesscontrolalloworiginlist=*",
+          "traefik.http.middlewares.wuzzy-search-api-dev-corsheaders.headers.accesscontrolmaxage=100",
+          "traefik.http.middlewares.wuzzy-search-api-dev-corsheaders.headers.addvaryheader=true",
+          "traefik.http.routers.wuzzy-search-api-dev.entrypoints=https",
+          "traefik.http.routers.wuzzy-search-api-dev.tls=true",
+          "traefik.http.routers.wuzzy-search-api-dev.tls.certresolver=memetic-block",
+          "traefik.http.routers.wuzzy-search-api-dev.rule=Host(`wuzzy-search-api-dev.hel.memeticblock.net`)"
         ]
       }
     }
