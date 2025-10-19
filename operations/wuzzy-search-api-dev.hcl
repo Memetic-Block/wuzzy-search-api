@@ -3,9 +3,8 @@ job "wuzzy-search-api-dev" {
   type = "service"
 
   constraint {
-    attribute = "${meta.vm_max_map_count}"
-    operator  = ">="
-    value     = "262144"
+    attribute = "${meta.env}"
+    value     = "edge-worker"
   }
 
   group "wuzzy-search-api-dev-group" {

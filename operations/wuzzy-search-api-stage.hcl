@@ -3,9 +3,20 @@ job "wuzzy-search-api-stage" {
   type = "service"
 
   constraint {
-    attribute = "${meta.vm_max_map_count}"
-    operator  = ">="
-    value     = "262144"
+    attribute = "${meta.env}"
+    value     = "edge-worker"
+  }
+
+  update {
+    max_parallel      = 1
+    health_check      = "checks"
+    min_healthy_time  = "10s"
+    healthy_deadline  = "5m"
+    progress_deadline = "10m"
+    auto_revert       = true
+    auto_promote      = true
+    canary            = 1
+    stagger           = "30s"
   }
 
   group "wuzzy-search-api-stage-group" {
@@ -28,7 +39,7 @@ job "wuzzy-search-api-stage" {
       env {
         VERSION="[[ .commit_sha ]]"
         PORT="${NOMAD_PORT_http}"
-        SEARCH_INDEX_NAME="permaweb-crawler-test-10-15-2025"
+        SEARCH_INDEX_NAME="permaweb-crawler-2025-10-17"
         ES_USERNAME="elastic"
         ES_PASSWORD="changeme"
         # ES_CERT_PATH="../infra/certs/ca/ca.crt"
