@@ -94,7 +94,7 @@ job "wuzzy-search-api-stage" {
           "traefik.http.routers.wuzzy-search-api-stage.entrypoints=https",
           "traefik.http.routers.wuzzy-search-api-stage.tls=true",
           "traefik.http.routers.wuzzy-search-api-stage.tls.certresolver=memetic-block",
-          "traefik.http.routers.wuzzy-search-api-stage.rule=Host(`api-stage.hel.memeticblock.net`)"
+          "traefik.http.routers.wuzzy-search-api-stage.rule=Host(`wuzzy-search-api-stage.hel.memeticblock.net`)"
         ]
       }
     }
