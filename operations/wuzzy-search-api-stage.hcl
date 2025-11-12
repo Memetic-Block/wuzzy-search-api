@@ -45,7 +45,7 @@ job "wuzzy-search-api-stage" {
 
       template {
         data = <<-EOF
-        {{- range service "wuzzy-opensearch-live-hel-1" }}
+        {{- range service "wuzzy-opensearch-stage-hel-1" }}
         ES_HOST="http://{{ .Address }}:{{ .Port }}"
         {{- end }}
         {{- range service "container-registry" }}
@@ -56,11 +56,11 @@ job "wuzzy-search-api-stage" {
         destination = "local/config.env"
       }
 
-      vault { policies = [ "wuzzy-opensearch-live" ] }
+      vault { policies = [ "wuzzy-opensearch-stage" ] }
 
       template {
         data = <<-EOF
-        {{- with secret "kv/wuzzy/opensearch-live" }}
+        {{- with secret "kv/wuzzy/opensearch-stage" }}
         ES_PASSWORD="{{ .Data.data.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}"
         {{- end }}
         EOF
