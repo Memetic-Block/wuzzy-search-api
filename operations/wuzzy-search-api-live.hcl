@@ -4,7 +4,7 @@ job "wuzzy-search-api-live" {
 
   constraint {
     attribute = "${meta.env}"
-    value     = "edge-worker"
+    value     = "worker"
   }
 
   update {
@@ -40,16 +40,12 @@ job "wuzzy-search-api-live" {
         VERSION="[[ .commit_sha ]]"
         PORT="${NOMAD_PORT_http}"
         SEARCH_INDEX_NAME="permaweb-crawler-2025-10-17"
-        ES_USERNAME="elastic"
-        ES_PASSWORD="changeme"
-        # ES_CERT_PATH="../infra/certs/ca/ca.crt"
-        # ES_USE_TLS="true"
-        # CORS_DOMAINS="https://wuzzy-stage.hel.memeticblock.net"
+        ES_USERNAME="admin"
       }
 
       template {
         data = <<-EOF
-        {{- range service "wuzzy-elasticsearch-live" }}
+        {{- range service "wuzzy-opensearch-live-hel-1" }}
         ES_HOST="http://{{ .Address }}:{{ .Port }}"
         {{- end }}
         {{- range service "container-registry" }}
@@ -58,6 +54,18 @@ job "wuzzy-search-api-live" {
         EOF
         env = true
         destination = "local/config.env"
+      }
+
+      vault { policies = [ "wuzzy-opensearch-live" ] }
+
+      template {
+        data = <<-EOF
+        {{- with secret "kv/wuzzy/opensearch-live" }}
+        ES_PASSWORD="{{ .Data.data.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}"
+        {{- end }}
+        EOF
+        destination = "secrets/config.env"
+        env = true
       }
 
       resources {
@@ -85,8 +93,8 @@ job "wuzzy-search-api-live" {
           "traefik.http.middlewares.wuzzy-search-api-live-corsheaders.headers.addvaryheader=true",
           "traefik.http.routers.wuzzy-search-api-live.entrypoints=https",
           "traefik.http.routers.wuzzy-search-api-live.tls=true",
-          "traefik.http.routers.wuzzy-search-api-live.tls.certresolver=memetic-block",
-          "traefik.http.routers.wuzzy-search-api-live.rule=Host(`wuzzy-search-api-live.hel.memeticblock.net`)"
+          "traefik.http.routers.wuzzy-search-api-live.tls.certresolver=wuzzy-tech",
+          "traefik.http.routers.wuzzy-search-api-live.rule=Host(`api.wuzzy.tech`)"
         ]
       }
     }

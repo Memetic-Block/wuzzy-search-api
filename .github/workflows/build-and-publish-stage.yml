@@ -3,8 +3,6 @@ name: Build & Publish Wuzzy Search API Image Stage
 on:
   push:
     branches: master
-    tags:
-      - v*
 env:
   IMAGE_NAME: wuzzy-search-api
 
@@ -46,9 +44,13 @@ jobs:
           echo VERSION=$VERSION
 
           docker tag $IMAGE_NAME $IMAGE_ID:${GITHUB_SHA}
+          docker tag $IMAGE_NAME $IMAGE_ID:${VERSION}
           docker tag $IMAGE_NAME $GHCR_IMAGE_ID:${GITHUB_SHA}
+          docker tag $IMAGE_NAME $GHCR_IMAGE_ID:${VERSION}
           docker push $IMAGE_ID:${GITHUB_SHA}
+          docker push $IMAGE_ID:${VERSION}
           docker push $GHCR_IMAGE_ID:${GITHUB_SHA}
+          docker push $GHCR_IMAGE_ID:${VERSION}
 
       - name: Deploy new version
         run: |

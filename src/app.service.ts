@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { Client } from '@elastic/elasticsearch'
+import { Client } from '@opensearch-project/opensearch'
 import * as fs from 'fs'
 import { stripHtml } from 'string-strip-html'
 
@@ -9,7 +9,7 @@ import { IndexedDocumentHit, SearchResults } from './schema/interfaces'
 @Injectable()
 export class AppService implements OnApplicationBootstrap {
   private readonly logger = new Logger(AppService.name)
-  private readonly elasticSearchClient: Client
+  private readonly opensearchClient: Client
   private readonly searchIndexName: string
   private readonly HIGHLIGHT_HTML_TAG = 'strong'
 
@@ -45,15 +45,15 @@ export class AppService implements OnApplicationBootstrap {
     }
 
 
-    let tls: { ca: Buffer, rejectUnauthorized: boolean } | undefined
+    let ssl: { ca: Buffer, rejectUnauthorized: boolean } | undefined
     if (this.config.get('ES_USE_TLS', { infer: true }) === 'true') {
       const esCertPath = this.config.get('ES_CERT_PATH', { infer: true })
       if (!esCertPath) {
         throw new Error('ES_CERT_PATH is not defined in the configuration')
       }
-      this.logger.log(`Reading Elasticsearch CA certificate from [${esCertPath}]`)
+      this.logger.log(`Reading OpenSearch CA certificate from [${esCertPath}]`)
       const ca = fs.readFileSync(esCertPath)
-      tls = {
+      ssl = {
         ca,
 
         // !!! For development purposes, consider setting this to true in prod!
@@ -62,29 +62,29 @@ export class AppService implements OnApplicationBootstrap {
     }
 
     this.logger.log(
-      `Initializing Elasticsearch client with url [${esHost}] ` +
+      `Initializing OpenSearch client with url [${esHost}] ` +
         `and username [${esUsername}]`
     )
     this.logger.log(`Using search index [${this.searchIndexName}]`)
-    this.elasticSearchClient = new Client({
+    this.opensearchClient = new Client({
       node: esHost,
       auth: {
         username: esUsername,
         password: esPassword
       },
-      tls
+      ssl
     })
   }
 
   async onApplicationBootstrap() {
     this.logger.log('Application bootstrap started...')
     try {
-      this.logger.log('Checking Elasticsearch connection...')
-      const isElasticSearchReachable = await this.elasticSearchClient.ping()
-      if (!isElasticSearchReachable) {
-        throw new Error('Elasticsearch is not reachable!')
+      this.logger.log('Checking OpenSearch connection...')
+      const isOpenSearchReachable = await this.opensearchClient.ping()
+      if (!isOpenSearchReachable) {
+        throw new Error('OpenSearch is not reachable!')
       }
-      this.logger.log('Elasticsearch is reachable.')
+      this.logger.log('OpenSearch is reachable.')
     } catch (error) {
       this.logger.error('Error during application bootstrap:', error)
       throw error
@@ -105,40 +105,42 @@ export class AppService implements OnApplicationBootstrap {
       `Executing search for query [${query}] ` +
         `at offset [${from}] with size [${size}]`
     )
-    const result = await this.elasticSearchClient.search<IndexedDocumentHit>({
+    const result = await this.opensearchClient.search({
       index: this.searchIndexName,
-      query: {
-        combined_fields: {
-          fields: [ 'title', 'meta_description', 'headings', 'body' ],
-          query
-        }
-      },
-      from,
-      size,
-      highlight: {
-        fields: {
-          body: {
-            fragment_size: 150,
-            number_of_fragments: 3,
-            pre_tags: [ `[[h]]` ],
-            post_tags: [ `[[/h]]` ]
+      body: {
+        query: {
+          combined_fields: {
+            fields: [ 'title', 'meta_description', 'headings', 'body' ],
+            query
+          }
+        },
+        from,
+        size,
+        highlight: {
+          fields: {
+            body: {
+              fragment_size: 150,
+              number_of_fragments: 3,
+              pre_tags: [ `[[h]]` ],
+              post_tags: [ `[[/h]]` ]
+            }
           }
         }
       }
     })
-    const total_results = typeof result.hits.total === 'number'
-      ? result.hits.total
-      : result.hits.total?.value || 0
+    const total_results = typeof result.body.hits.total === 'number'
+      ? result.body.hits.total
+      : result.body.hits.total?.value || 0
     this.logger.log(
-      `Search for query "${query}" took [${result.took}ms] ` +
-        `with hits [${result.hits.hits.length}] ` +
+      `Search for query "${query}" took [${result.body.took}ms] ` +
+        `with hits [${result.body.hits.hits.length}] ` +
         `& total results [${total_results}]`
     )
 
     return {
-      took: result.took,
+      took: result.body.took,
       total_results,
-      hits: result.hits.hits
+      hits: result.body.hits.hits
         .map(hit => {
           if (hit._source) {
             if (hit.highlight && hit.highlight.body) {
