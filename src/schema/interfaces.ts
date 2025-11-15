@@ -20,3 +20,22 @@ export interface SearchResults {
   total_results: number
   hits: IndexedDocumentHit[]
 }
+
+export interface SearchMetricsHit {
+  documentId: string
+  urlHost: string
+  urlPath: string
+  score: number
+}
+
+export interface SearchMetricsEvent {
+  requestId: string
+  query: string
+  offset: number
+  executionTimeMs: number
+  totalResults: number
+  hitsCount: number
+  hits: SearchMetricsHit[]
+  timestamp: string
+  userAgent?: string
+}
