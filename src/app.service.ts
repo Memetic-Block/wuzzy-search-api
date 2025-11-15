@@ -3,8 +3,10 @@ import { ConfigService } from '@nestjs/config'
 import { Client } from '@opensearch-project/opensearch'
 import * as fs from 'fs'
 import { stripHtml } from 'string-strip-html'
+import { randomUUID } from 'crypto'
 
 import { IndexedDocumentHit, SearchResults } from './schema/interfaces'
+import { MetricsService } from './metrics/metrics.service'
 
 @Injectable()
 export class AppService implements OnApplicationBootstrap {
@@ -21,7 +23,8 @@ export class AppService implements OnApplicationBootstrap {
       ES_PASSWORD: string
       ES_USE_TLS: string
       ES_CERT_PATH: string
-    }>
+    }>,
+    private readonly metricsService: MetricsService
   ) {
     const searchIndexName = this.config.get('SEARCH_INDEX_NAME', { infer: true })
     if (!searchIndexName) {
@@ -98,11 +101,14 @@ export class AppService implements OnApplicationBootstrap {
 
   async getSearch(
     query: string,
-    from: number = 0
+    from: number = 0,
+    userAgent?: string
   ): Promise<SearchResults> {
+    const requestId = randomUUID()
     const size = 20
+
     this.logger.log(
-      `Executing search for query [${query}] ` +
+      `[${requestId}] Executing search for query [${query}] ` +
         `at offset [${from}] with size [${size}]`
     )
     const result = await this.opensearchClient.search({
@@ -128,14 +134,43 @@ export class AppService implements OnApplicationBootstrap {
         }
       }
     })
-    const total_results = typeof result.body.hits.total === 'number'
-      ? result.body.hits.total
-      : result.body.hits.total?.value || 0
+    const total_results =
+      typeof result.body.hits.total === 'number'
+        ? result.body.hits.total
+        : result.body.hits.total?.value || 0
+
     this.logger.log(
-      `Search for query "${query}" took [${result.body.took}ms] ` +
+      `[${requestId}] Search for query "${query}" took [${result.body.took}ms] ` +
         `with hits [${result.body.hits.hits.length}] ` +
         `& total results [${total_results}]`
     )
+
+    // Publish metrics asynchronously (fire-and-forget)
+    try {
+      const hits = result.body.hits.hits.map(hit => ({
+        documentId: hit._id,
+        urlHost: hit._source?.url_host || '',
+        urlPath: hit._source?.url_path || '',
+        score: hit._score || 0
+      }))
+
+      await this.metricsService.publishSearchMetrics({
+        requestId,
+        query,
+        offset: from,
+        executionTimeMs: result.body.took,
+        totalResults: total_results,
+        hitsCount: result.body.hits.hits.length,
+        hits,
+        timestamp: new Date().toISOString(),
+        userAgent
+      })
+    } catch (error) {
+      // Metrics publishing errors should not affect search results
+      this.logger.error(
+        `[${requestId}] Failed to publish metrics: ${error.message}`
+      )
+    }
 
     return {
       took: result.body.took,

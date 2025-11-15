@@ -1,4 +1,4 @@
-import { Controller, Get, Logger, Query } from '@nestjs/common'
+import { Controller, Get, Logger, Query, Headers } from '@nestjs/common'
 import { AppService } from './app.service'
 import { SearchResults } from './schema/interfaces'
 
@@ -16,8 +16,9 @@ export class AppController {
   @Get('search')
   async search(
     @Query('q') query: string,
-    @Query('from') from: number
+    @Query('from') from: number,
+    @Headers('user-agent') userAgent?: string
   ): Promise<SearchResults> {
-    return this.appService.getSearch(query, from)
+    return this.appService.getSearch(query, from, userAgent)
   }
 }
