@@ -29,7 +29,6 @@ Create a `.env` file in the project root with the following variables:
 | `ES_PASSWORD` | ✅ | - | OpenSearch authentication password |
 | `ES_USE_TLS` | ❌ | `false` | Enable TLS/SSL connection (`true` or `false`) |
 | `ES_CERT_PATH` | ⚠️ | - | Path to CA certificate file (required if `ES_USE_TLS=true`) |
-| `UBI_STORE_NAME` | ❌ | `.ubi_queries` | OpenSearch index name for UBI query storage |
 | `PORT` | ❌ | `3000` | HTTP server port |
 | `CORS_DOMAINS` | ❌ | `*` | Comma-separated list of allowed CORS origins |
 
@@ -42,7 +41,6 @@ ES_USERNAME=search-user
 ES_PASSWORD=your-secure-password
 ES_USE_TLS=true
 ES_CERT_PATH=/path/to/ca-cert.pem
-UBI_STORE_NAME=.ubi_queries
 PORT=3000
 CORS_DOMAINS=https://example.com,https://app.example.com
 ```

@@ -12,7 +12,6 @@ export class AppService implements OnApplicationBootstrap {
   private readonly logger = new Logger(AppService.name)
   private readonly opensearchClient: Client
   private readonly searchIndexName: string
-  private readonly ubiStoreName: string
   private readonly HIGHLIGHT_HTML_TAG = 'strong'
 
   constructor(
@@ -23,7 +22,6 @@ export class AppService implements OnApplicationBootstrap {
       ES_PASSWORD: string
       ES_USE_TLS: string
       ES_CERT_PATH: string
-      UBI_STORE_NAME: string
     }>
   ) {
     const searchIndexName = this.config.get('SEARCH_INDEX_NAME', { infer: true })
@@ -31,8 +29,6 @@ export class AppService implements OnApplicationBootstrap {
       throw new Error('SEARCH_INDEX_NAME is not defined in the configuration')
     }
     this.searchIndexName = searchIndexName
-
-    this.ubiStoreName = this.config.get('UBI_STORE_NAME', { infer: true }) ?? '.ubi_queries'
 
     const esHost = this.config.get('ES_HOST', { infer: true })
     if (!esHost) {
