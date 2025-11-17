@@ -18,5 +18,6 @@ export interface IndexedDocumentHit {
 export interface SearchResults {
   took: number
   total_results: number
+  query_id: string
   hits: IndexedDocumentHit[]
 }

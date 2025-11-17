@@ -1,98 +1,191 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Wuzzy Search API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A NestJS-based search API that provides full-text search capabilities powered by OpenSearch with User Behavior Insights (UBI) tracking for search analytics.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Features
 
-## Description
+- **Full-Text Search**: Search across multiple document fields (title, meta description, headings, body) using OpenSearch's `combined_fields` query
+- **Highlight Snippets**: Returns contextual snippets from document body with search terms highlighted in `<strong>` tags
+- **User Behavior Insights**: Tracks search queries with unique query IDs for analytics and search quality improvement
+- **Client Tracking**: Optional client identification headers for tracking user sessions and application versions
+- **Health Check**: Simple health endpoint for monitoring and load balancer checks
+- **CORS Support**: Configurable CORS domains for cross-origin requests
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Requirements
 
-## Project setup
+- Node.js 18+ (LTS recommended)
+- OpenSearch cluster with UBI plugin installed
+- Access to an OpenSearch index with searchable documents
 
-```bash
-$ npm install
+## Environment Variables
+
+Create a `.env` file in the project root with the following variables:
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `SEARCH_INDEX_NAME` | ✅ | - | OpenSearch index name containing searchable documents |
+| `ES_HOST` | ✅ | - | OpenSearch cluster URL (e.g., `https://localhost:9200`) |
+| `ES_USERNAME` | ✅ | - | OpenSearch authentication username |
+| `ES_PASSWORD` | ✅ | - | OpenSearch authentication password |
+| `ES_USE_TLS` | ❌ | `false` | Enable TLS/SSL connection (`true` or `false`) |
+| `ES_CERT_PATH` | ⚠️ | - | Path to CA certificate file (required if `ES_USE_TLS=true`) |
+| `PORT` | ❌ | `3000` | HTTP server port |
+| `CORS_DOMAINS` | ❌ | `*` | Comma-separated list of allowed CORS origins |
+
+### Example `.env` file
+
+```env
+SEARCH_INDEX_NAME=web-documents
+ES_HOST=https://opensearch.example.com:9200
+ES_USERNAME=search-user
+ES_PASSWORD=your-secure-password
+ES_USE_TLS=true
+ES_CERT_PATH=/path/to/ca-cert.pem
+PORT=3000
+CORS_DOMAINS=https://example.com,https://app.example.com
 ```
 
-## Compile and run the project
+## Installation
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
 ```
 
-## Run tests
+## Running the Application
 
 ```bash
-# unit tests
-$ npm run test
+# Development mode with auto-reload
+npm run start:dev
 
-# e2e tests
-$ npm run test:e2e
+# Production mode
+npm run build
+npm run start:prod
 
-# test coverage
-$ npm run test:cov
+# Standard development mode
+npm run start
 ```
 
-## Deployment
+## API Endpoints
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### Health Check
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Check if the API is running.
+
+**Request:**
+```bash
+curl http://localhost:3000/
+```
+
+**Response:**
+```
+OK
+```
+
+### Search
+
+Perform a full-text search across indexed documents.
+
+**Endpoint:** `GET /search`
+
+**Query Parameters:**
+- `q` (required): Search query string
+- `from` (optional): Pagination offset, defaults to `0`
+
+**Request Headers (Optional):**
+- `x-client-name`: Client application name (e.g., `web-app`)
+- `x-client-version`: Client application version (e.g., `1.2.0`)
+- `x-session-id`: User session identifier (e.g., `abc123xyz`)
+
+**Example Request (Basic):**
+```bash
+curl "http://localhost:3000/search?q=arweave&from=0"
+```
+
+**Example Request (With Client Tracking):**
+```bash
+curl "http://localhost:3000/search?q=arweave&from=0" \
+  -H "x-client-name: web-app" \
+  -H "x-client-version: 1.2.0" \
+  -H "x-session-id: user-session-123"
+```
+
+**Example Response:**
+```json
+{
+  "took": 45,
+  "total_results": 127,
+  "query_id": "f7c3a8b2-4d1e-4a9c-b8f3-1e2d3c4b5a6f",
+  "hits": [
+    {
+      "id": "doc-123",
+      "title": "Introduction to Arweave",
+      "meta_description": "Learn about Arweave's permanent storage protocol",
+      "body": "Arweave is a decentralized storage network... <strong>Arweave</strong> allows you to store data permanently...",
+      "url": "https://example.com/arweave-intro",
+      "url_scheme": "https",
+      "url_host": "example.com",
+      "url_port": 443,
+      "url_path": "/arweave-intro",
+      "url_path_dir1": "",
+      "url_path_dir2": "",
+      "headings": ["What is Arweave?", "How it Works"],
+      "links": ["https://arweave.org"],
+      "last_crawled_at": "2025-11-15T10:30:00Z"
+    }
+  ]
+}
+```
+
+**Response Fields:**
+- `took`: Search execution time in milliseconds
+- `total_results`: Total number of matching documents
+- `query_id`: Unique identifier for this search query (used for UBI tracking)
+- `hits`: Array of matching documents (max 20 per request)
+  - `body`: Document body with search terms wrapped in `<strong>` tags (up to 3 highlight snippets)
+  - Other fields from the indexed document
+
+## Docker
+
+Build and run using Docker:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Build image
+docker build -t wuzzy-search-api .
+
+# Run container
+docker run -p 3000:3000 --env-file .env wuzzy-search-api
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Development
 
-## Resources
+```bash
+# Run tests
+npm run test
 
-Check out a few resources that may come in handy when working with NestJS:
+# Run e2e tests
+npm run test:e2e
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# Run tests with coverage
+npm run test:cov
 
-## Support
+# Lint and fix code
+npm run lint
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# Format code
+npm run format
+```
 
-## Stay in touch
+## OpenSearch Index Requirements
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+The search index should contain documents with the following fields:
 
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- `id`: Unique document identifier
+- `title`: Document title
+- `meta_description`: Meta description or summary
+- `headings`: Array of heading text
+- `body`: Full document body content (can contain HTML)
+- `url`: Full document URL
+- `url_scheme`, `url_host`, `url_port`, `url_path`: URL components
+- `url_path_dir1`, `url_path_dir2`: URL path directory levels
+- `links`: Array of outbound links
+- `last_crawled_at`: Timestamp of last document update

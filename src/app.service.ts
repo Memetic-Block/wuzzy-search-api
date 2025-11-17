@@ -3,8 +3,9 @@ import { ConfigService } from '@nestjs/config'
 import { Client } from '@opensearch-project/opensearch'
 import * as fs from 'fs'
 import { stripHtml } from 'string-strip-html'
+import { randomUUID } from 'crypto'
 
-import { IndexedDocumentHit, SearchResults } from './schema/interfaces'
+import { SearchResults } from './schema/interfaces'
 
 @Injectable()
 export class AppService implements OnApplicationBootstrap {
@@ -98,16 +99,31 @@ export class AppService implements OnApplicationBootstrap {
 
   async getSearch(
     query: string,
-    from: number = 0
+    from: number = 0,
+    client_id?: string
   ): Promise<SearchResults> {
+    const query_id = randomUUID()
     const size = 20
+
     this.logger.log(
-      `Executing search for query [${query}] ` +
-        `at offset [${from}] with size [${size}]`
+      `Executing search for query [${query}]`
+        + ` at offset [${from}] with size [${size}]`
+        + ` and query_id [${query_id}]`
+        + (client_id ? ` and client_id [${client_id}]` : '')
     )
+    const ubi = {
+      object_id_field: 'id',
+      query_id,
+      user_query: query,
+      application: 'arns-search'
+    }
+    if (client_id) {
+      ubi['client_id'] = client_id
+    }
     const result = await this.opensearchClient.search({
       index: this.searchIndexName,
       body: {
+        ext: { ubi },
         query: {
           combined_fields: {
             fields: [ 'title', 'meta_description', 'headings', 'body' ],
@@ -132,14 +148,17 @@ export class AppService implements OnApplicationBootstrap {
       ? result.body.hits.total
       : result.body.hits.total?.value || 0
     this.logger.log(
-      `Search for query "${query}" took [${result.body.took}ms] ` +
-        `with hits [${result.body.hits.hits.length}] ` +
-        `& total results [${total_results}]`
+      `Search for query "${query}" took [${result.body.took}ms]`
+        + ` with hits [${result.body.hits.hits.length}],`
+        + ` total results [${total_results}],`
+        + ` query_id [${query_id}]`
+        + (client_id ? ` and client_id [${client_id}]` : '')
     )
 
     return {
       took: result.body.took,
       total_results,
+      query_id,
       hits: result.body.hits.hits
         .map(hit => {
           if (hit._source) {
