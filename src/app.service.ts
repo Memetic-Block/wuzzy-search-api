@@ -116,13 +116,14 @@ export class AppService implements OnApplicationBootstrap {
       object_id_field: 'id',
       query_id,
       user_query: query,
-      application: 'arns-search'
+      application: 'arns-search',
+      query_attributes: { from }
     }
     if (client_id) {
       ubi['client_id'] = client_id
     }
     if (wallet_address) {
-      ubi['wallet_address'] = wallet_address
+      ubi.query_attributes['wallet_address'] = wallet_address
     }
     const result = await this.opensearchClient.search({
       index: this.searchIndexName,
