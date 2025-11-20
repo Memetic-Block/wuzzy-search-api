@@ -5,7 +5,7 @@ import * as fs from 'fs'
 import { stripHtml } from 'string-strip-html'
 import { randomUUID } from 'crypto'
 
-import { SearchResults } from './schema/interfaces'
+import { SearchResults } from './schema/response.dto'
 
 @Injectable()
 export class AppService implements OnApplicationBootstrap {
@@ -100,7 +100,8 @@ export class AppService implements OnApplicationBootstrap {
   async getSearch(
     query: string,
     from: number = 0,
-    client_id?: string
+    client_id?: string,
+    wallet_address?: string
   ): Promise<SearchResults> {
     const query_id = randomUUID()
     const size = 20
@@ -119,6 +120,9 @@ export class AppService implements OnApplicationBootstrap {
     }
     if (client_id) {
       ubi['client_id'] = client_id
+    }
+    if (wallet_address) {
+      ubi['wallet_address'] = wallet_address
     }
     const result = await this.opensearchClient.search({
       index: this.searchIndexName,
