@@ -39,7 +39,7 @@ job "wuzzy-search-api-stage" {
       env {
         VERSION="[[ .commit_sha ]]"
         PORT="${NOMAD_PORT_http}"
-        SEARCH_INDEX_NAME="permaweb-crawler-2025-10-17"
+        SEARCH_INDEX_NAME="permaweb-crawler-2025-11-29"
         ES_USERNAME="admin"
       }
 
