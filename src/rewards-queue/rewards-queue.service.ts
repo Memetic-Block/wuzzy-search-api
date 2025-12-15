@@ -3,7 +3,7 @@ import { InjectQueue } from '@nestjs/bullmq'
 import { Queue } from 'bullmq'
 import { WalletValidator } from '../utils/wallet.validator'
 
-export type RewardEventType = 'image-search' | 'audio-search' | 'video-search'
+export type RewardEventType = 'arns-search'
 
 export interface RewardEventData {
   eventType: RewardEventType
@@ -19,9 +19,7 @@ export class RewardsQueueService {
 
   // Mapping from UBI application field to BullMQ job name
   private readonly APPLICATION_TO_JOB_TYPE: Record<string, RewardEventType> = {
-    'graphql-images': 'image-search',
-    'graphql-video': 'video-search',
-    'graphql-audio': 'audio-search'
+    'arns-search': 'arns-search'
   }
 
   constructor(

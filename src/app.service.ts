@@ -6,6 +6,7 @@ import { stripHtml } from 'string-strip-html'
 import { randomUUID } from 'crypto'
 
 import { SearchResults } from './schema/response.dto'
+import { RewardsQueueService } from './rewards-queue/rewards-queue.service'
 
 @Injectable()
 export class AppService implements OnApplicationBootstrap {
@@ -22,7 +23,8 @@ export class AppService implements OnApplicationBootstrap {
       ES_PASSWORD: string
       ES_USE_TLS: string
       ES_CERT_PATH: string
-    }>
+    }>,
+    private readonly rewardsQueueService: RewardsQueueService
   ) {
     const searchIndexName = this.config.get('SEARCH_INDEX_NAME', {
       infer: true
@@ -113,11 +115,12 @@ export class AppService implements OnApplicationBootstrap {
         ` and query_id [${query_id}]` +
         (client_id ? ` and client_id [${client_id}]` : '')
     )
+    const application = 'arns-search'
     const ubi = {
       object_id_field: 'id',
       query_id,
       user_query: query,
-      application: 'arns-search',
+      application,
       query_attributes: { from }
     }
     if (client_id) {
@@ -125,6 +128,11 @@ export class AppService implements OnApplicationBootstrap {
     }
     if (wallet_address) {
       ubi.query_attributes['wallet_address'] = wallet_address
+      this.rewardsQueueService.enqueueRewardEvent(
+        wallet_address,
+        application,
+        new Date().toISOString()
+      )
     }
     const result = await this.opensearchClient.search({
       index: this.searchIndexName,
