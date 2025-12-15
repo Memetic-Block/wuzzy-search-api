@@ -41,12 +41,17 @@ job "wuzzy-search-api-stage" {
         PORT="${NOMAD_PORT_http}"
         SEARCH_INDEX_NAME="permaweb-crawler-2025-12-01"
         ES_USERNAME="admin"
+        REWARDS_REDIS_MODE="standalone"
       }
 
       template {
         data = <<-EOF
         {{- range service "wuzzy-opensearch-stage-hel-1" }}
         ES_HOST="http://{{ .Address }}:{{ .Port }}"
+        {{- end }}
+        {{- range service "rewards-goblin-redis-stage" }}
+        REWARDS_REDIS_HOST="{{ .Address }}"
+        REWARDS_REDIS_PORT="{{ .Port }}"
         {{- end }}
         {{- range service "container-registry" }}
         CONTAINER_REGISTRY_ADDR="{{ .Address }}:{{ .Port }}"

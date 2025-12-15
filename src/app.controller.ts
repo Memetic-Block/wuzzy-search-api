@@ -23,29 +23,42 @@ export class AppController {
     @Headers() headers: SearchHeadersDto
   ): Promise<SearchResults> {
     let client_id: string | undefined
-    
+
     const clientName = headers['x-client-name']
     const clientVersion = headers['x-client-version']
     const sessionId = headers['x-session-id']
     let walletAddress = headers['x-wallet-address']
-    
+
     if (clientName || clientVersion || sessionId) {
       client_id = `${clientName || ''}@${clientVersion || ''}@${sessionId || ''}`
     } else {
-      this.logger.warn('No client tracking headers provided (x-client-name, x-client-version, x-session-id)')
+      this.logger.warn(
+        'No client tracking headers provided (x-client-name, x-client-version, x-session-id)'
+      )
     }
 
     // Manually validate wallet address if provided, since header validation might be skipped
     if (walletAddress) {
-      const headerInstance = plainToInstance(SearchHeadersDto, { 'x-wallet-address': walletAddress })
-      const errors = await validate(headerInstance, { skipMissingProperties: true })
-      
+      const headerInstance = plainToInstance(SearchHeadersDto, {
+        'x-wallet-address': walletAddress
+      })
+      const errors = await validate(headerInstance, {
+        skipMissingProperties: true
+      })
+
       if (errors.length > 0) {
-        this.logger.warn(`Invalid x-wallet-address header: ${walletAddress}. Must be 43 characters of base64url. Ignoring wallet address.`)
+        this.logger.warn(
+          `Invalid x-wallet-address header: ${walletAddress}. Must be 43 characters of base64url. Ignoring wallet address.`
+        )
         walletAddress = undefined
       }
     }
 
-    return this.appService.getSearch(queryDto.q, queryDto.from, client_id, walletAddress)
+    return this.appService.getSearch(
+      queryDto.q,
+      queryDto.from,
+      client_id,
+      walletAddress
+    )
   }
 }

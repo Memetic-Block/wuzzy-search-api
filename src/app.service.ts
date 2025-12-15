@@ -24,7 +24,9 @@ export class AppService implements OnApplicationBootstrap {
       ES_CERT_PATH: string
     }>
   ) {
-    const searchIndexName = this.config.get('SEARCH_INDEX_NAME', { infer: true })
+    const searchIndexName = this.config.get('SEARCH_INDEX_NAME', {
+      infer: true
+    })
     if (!searchIndexName) {
       throw new Error('SEARCH_INDEX_NAME is not defined in the configuration')
     }
@@ -45,8 +47,7 @@ export class AppService implements OnApplicationBootstrap {
       throw new Error('ES_PASSWORD is not defined in the configuration')
     }
 
-
-    let ssl: { ca: Buffer, rejectUnauthorized: boolean } | undefined
+    let ssl: { ca: Buffer; rejectUnauthorized: boolean } | undefined
     if (this.config.get('ES_USE_TLS', { infer: true }) === 'true') {
       const esCertPath = this.config.get('ES_CERT_PATH', { infer: true })
       if (!esCertPath) {
@@ -107,10 +108,10 @@ export class AppService implements OnApplicationBootstrap {
     const size = 20
 
     this.logger.log(
-      `Executing search for query [${query}]`
-        + ` at offset [${from}] with size [${size}]`
-        + ` and query_id [${query_id}]`
-        + (client_id ? ` and client_id [${client_id}]` : '')
+      `Executing search for query [${query}]` +
+        ` at offset [${from}] with size [${size}]` +
+        ` and query_id [${query_id}]` +
+        (client_id ? ` and client_id [${client_id}]` : '')
     )
     const ubi = {
       object_id_field: 'id',
@@ -131,7 +132,7 @@ export class AppService implements OnApplicationBootstrap {
         ext: { ubi },
         query: {
           combined_fields: {
-            fields: [ 'title', 'meta_description', 'headings', 'body' ],
+            fields: ['title', 'meta_description', 'headings', 'body'],
             query
           }
         },
@@ -142,22 +143,23 @@ export class AppService implements OnApplicationBootstrap {
             body: {
               fragment_size: 150,
               number_of_fragments: 3,
-              pre_tags: [ `[[h]]` ],
-              post_tags: [ `[[/h]]` ]
+              pre_tags: [`[[h]]`],
+              post_tags: [`[[/h]]`]
             }
           }
         }
       }
     })
-    const total_results = typeof result.body.hits.total === 'number'
-      ? result.body.hits.total
-      : result.body.hits.total?.value || 0
+    const total_results =
+      typeof result.body.hits.total === 'number'
+        ? result.body.hits.total
+        : result.body.hits.total?.value || 0
     this.logger.log(
-      `Search for query "${query}" took [${result.body.took}ms]`
-        + ` with hits [${result.body.hits.hits.length}],`
-        + ` total results [${total_results}],`
-        + ` query_id [${query_id}]`
-        + (client_id ? ` and client_id [${client_id}]` : '')
+      `Search for query "${query}" took [${result.body.took}ms]` +
+        ` with hits [${result.body.hits.hits.length}],` +
+        ` total results [${total_results}],` +
+        ` query_id [${query_id}]` +
+        (client_id ? ` and client_id [${client_id}]` : '')
     )
 
     return {
@@ -165,23 +167,17 @@ export class AppService implements OnApplicationBootstrap {
       total_results,
       query_id,
       hits: result.body.hits.hits
-        .map(hit => {
+        .map((hit) => {
           if (hit._source) {
             if (hit.highlight && hit.highlight.body) {
               hit._source.body = stripHtml(hit.highlight.body.join('  '))
-                .result
-                .replaceAll(
-                  `[[h]]`,
-                  `<${this.HIGHLIGHT_HTML_TAG}>`
-                ).replaceAll(
-                  `[[/h]]`,
-                  `</${this.HIGHLIGHT_HTML_TAG}>`
-                )
+                .result.replaceAll(`[[h]]`, `<${this.HIGHLIGHT_HTML_TAG}>`)
+                .replaceAll(`[[/h]]`, `</${this.HIGHLIGHT_HTML_TAG}>`)
             }
           }
           return hit._source
         })
-        .filter(hit => !!hit)
+        .filter((hit) => !!hit)
     }
   }
 }

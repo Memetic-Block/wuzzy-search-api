@@ -16,7 +16,8 @@ export class SearchHeadersDto {
   @IsOptional()
   @IsString()
   @Matches(/^[A-Za-z0-9_-]{43}$/, {
-    message: 'x-wallet-address must be a valid 43-character Arweave address (base64url format)'
+    message:
+      'x-wallet-address must be a valid 43-character Arweave address (base64url format)'
   })
   'x-wallet-address'?: string
 }
