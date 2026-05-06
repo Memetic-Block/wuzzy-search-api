@@ -4,7 +4,7 @@ job "wuzzy-search-api-live" {
 
   constraint {
     attribute = "${meta.env}"
-    value     = "worker"
+    value     = "edge-worker"
   }
 
   update {
